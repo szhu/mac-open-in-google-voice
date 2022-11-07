@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>CFBundleURLTypes</key>
+    <array>
+      <dict>
+        <key>CFBundleURLName</key>
+        <string>Phone Call URL</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>tel</string>
+        </array>
+        <key>LSIsAppleDefaultForScheme</key>
+        <true />
+      </dict>
+      <dict>
+        <key>CFBundleURLName</key>
+        <string>SMS URL</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>sms</string>
+        </array>
+        <key>LSIsAppleDefaultForScheme</key>
+        <true />
+      </dict>
+    </array>
+    <key>CFBundleExecutable</key>
+    <string>Google Voice Launcher</string>
+    <key>CFBundleIconFile</key>
+    <string>Icon</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.interestinglythere.GoogleVoiceLauncher</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>Google Voice Launcher</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.1</string>
+    <key>LSBackgroundOnly</key>
+    <true />
+    <key>NSSupportsAutomaticTermination</key>
+    <true />
+  </dict>
+</plist>

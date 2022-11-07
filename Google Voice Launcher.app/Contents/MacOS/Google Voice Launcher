@@ -1,0 +1,122 @@
+#!/usr/bin/env swift
+// https://theswiftdev.com/how-to-build-macos-apps-using-only-the-swift-package-manager/
+
+import AppKit
+import SwiftUI
+
+@discardableResult
+func shell(_ args: String...) -> Int32 {
+    let task = Process()
+    task.launchPath = "/usr/bin/env"
+    task.arguments = args
+    task.launch()
+    task.waitUntilExit()
+    return task.terminationStatus
+}
+
+func info(_ title: String, _ message: String) {
+    NSApp.setActivationPolicy(.accessory)
+    NSApplication.shared.activate(ignoringOtherApps: true)
+    let alert = NSAlert()
+    alert.messageText = title
+    alert.informativeText = message
+    alert.addButton(withTitle: "OK")
+    alert.alertStyle = .informational
+    alert.icon = NSImage(named: NSImage.infoName)
+    alert.runModal()
+    NSApp.setActivationPolicy(.prohibited)
+}
+
+func alert(_ message: String) {
+    NSApp.setActivationPolicy(.accessory)
+    NSApplication.shared.activate(ignoringOtherApps: true)
+    let alert = NSAlert()
+    alert.messageText = "Error"
+    alert.informativeText = message
+    alert.addButton(withTitle: "OK")
+    alert.alertStyle = .critical
+    alert.runModal()
+    NSApp.setActivationPolicy(.prohibited)
+}
+
+var nFilesOpened = 0
+
+@available(macOS 10.15, *)
+class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillFinishLaunching(_: Notification) {
+        let appMenu = NSMenuItem()
+        appMenu.submenu = NSMenu()
+        appMenu.submenu?.addItem(NSMenuItem(
+            title: "Quit",
+            action: #selector(NSApplication.terminate(_:)),
+            keyEquivalent: "q"
+        ))
+        let mainMenu = NSMenu()
+        mainMenu.addItem(appMenu)
+        NSApplication.shared.mainMenu = mainMenu
+
+        // https://stackoverflow.com/a/1991162/782045
+        NSAppleEventManager.shared().setEventHandler(
+            self,
+            andSelector: #selector(handleURLEvent),
+            forEventClass: AEEventClass(kInternetEventClass),
+            andEventID: AEEventID(kAEGetURL)
+        )
+
+        NSApp.setActivationPolicy(.accessory)
+    }
+
+    // https://stackoverflow.com/a/1991162/782045
+    @objc
+    func handleURLEvent(
+        _ event: NSAppleEventDescriptor?,
+        withReplyEvent _: NSAppleEventDescriptor?
+    ) {
+        NSApp.setActivationPolicy(.prohibited)
+
+        guard let urlAsString = event?.paramDescriptor(forKeyword: keyDirectObject)?.stringValue else {
+            alert("No URL provided")
+            return
+        }
+
+        guard let url = URL(string: urlAsString) else {
+            alert("Invalid URL")
+            return
+        }
+
+        if url.scheme == "tel" {
+            let phoneNumber = urlAsString.dropFirst(4)
+            let escapedPhoneNumber = phoneNumber.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)!
+
+            // https://www.reddit.com/r/Googlevoice/comments/hbatkp
+            let url = URL(string: "https://voice.google.com/u/0/calls?a=nc,%2B\(escapedPhoneNumber)")!
+            openUrl(url)
+        } else if url.scheme == "sms" {
+            let phoneNumber = String(urlAsString.dropFirst(4))
+            let escapedPhoneNumber = phoneNumber.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)!
+
+            let pasteboard = NSPasteboard.general
+            pasteboard.declareTypes([.string], owner: nil)
+            pasteboard.setString(phoneNumber, forType: .string)
+            info("The phone number was copied to clipboard.", String(phoneNumber))
+
+            // https://www.reddit.com/r/Googlevoice/comments/hbatkp
+            let url = URL(string: "https://voice.google.com/u/0/messages?itemId=t.%2B\(escapedPhoneNumber)")!
+            openUrl(url)
+        } else {
+            alert("Invalid URL scheme")
+        }
+
+        NSApp.setActivationPolicy(.accessory)
+    }
+
+    func openUrl(_ url: URL) {
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        NSWorkspace.shared.open(url, configuration: configuration, completionHandler: nil)
+    }
+}
+
+let delegate = AppDelegate()
+NSApplication.shared.delegate = delegate
+NSApplication.shared.run()
